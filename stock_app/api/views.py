@@ -2,10 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework import viewsets, status
-from rest_framework.mixins import CreateModelMixin, ListModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin, DestroyModelMixin
 
-from goods.models import Stock, Product
-from .serializers import StockSerializer, ProductSerializer
+from goods.models import Stock, Product, Reserve
+from .serializers import StockSerializer, ProductSerializer, ReserveSerializer
 
 
 class StockViewSet(CreateModelMixin, ListModelMixin,
@@ -53,6 +53,22 @@ class StockBalance(APIView):
         })
 
 
+class ReserveProduct(APIView):
+
+    def post(self, request, id):
+        stock = Stock.objects.get(id=id)
+        products = request.data['reserve']
+        for pr in products:
+            if Product.objects.filter(code=pr).exists():
+                pr_id = Product.objects.get(code=pr).id
+                if stock.products.filter(id=pr_id).exists():
+                    print('ok')
+                else:
+                    print('no')
+            else:
+                print('no prod')
+        print(request.data)
+        return Response(request.data)
 
 
 class ProductViewSet(CreateModelMixin, ListModelMixin,

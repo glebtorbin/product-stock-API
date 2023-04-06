@@ -12,7 +12,7 @@ class Stock(models.Model):
 
 class Product(models.Model):
     title = models.CharField(max_length=500)
-    code = models.BigIntegerField(unique=True)
+    code = models.BigIntegerField()
     quantity = models.IntegerField(default=0)
     date_create = models.DateTimeField(auto_now_add=True)
     stocks = models.ManyToManyField(Stock, related_name='products')
@@ -33,3 +33,21 @@ class Product_attr(models.Model):
         return self.name
 
 
+class Reserve(models.Model):
+    count_positions = models.IntegerField()
+    date_create = models.DateTimeField(auto_now_add=True)
+
+
+class StockProductReserve(models.Model):
+    reserve = models.ForeignKey(
+        Reserve, on_delete=models.CASCADE,
+        blank=False, null=False
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE,
+        blank=False, null=False
+    )
+    stock = models.ForeignKey(
+        Stock, on_delete=models.CASCADE,
+        blank=False, null=False
+    )

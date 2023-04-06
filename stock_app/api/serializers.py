@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.fields import CharField, JSONField
 
-from goods.models import Stock, Product, Product_attr
+from goods.models import Stock, Product, Product_attr, Reserve
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -14,11 +14,15 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
     
     def create(self, data):
-        product = Product.objects.create(
-            title = data['title'],
-            code = data['code'],
-            quantity = data['quantity'],
-        )
+        if Product.objects.filter(code=data['code']).exists():
+            product = Product.objects.get(code=data['code'])
+            product.quantity = int(product.quantity) + int(data['quantity'])
+        else:
+            product = Product.objects.create(
+                title = data['title'],
+                code = data['code'],
+                quantity = data['quantity'],
+            )
         product.stocks.set(data['stocks'])
         product.save()
         v_data = data["data"]
@@ -38,6 +42,20 @@ class ProductSerializer(serializers.ModelSerializer):
             for at in attr:
                 data[at.name] = at.value
         return data
+
+
+class ReserveSerializer(serializers.ModelSerializer):
+    reserve = JSONField(write_only=True)
+
+    class Meta:
+        fields = ('reserve', )
+        model = Reserve
+    
+    # def create(self, data):
+    #     stock_id = self.context.get('r_id')
+    #     products = data['reserve']
+    #     print(stock_id, products)
+    #     return data
 
 
 class StockSerializer(serializers.ModelSerializer):
