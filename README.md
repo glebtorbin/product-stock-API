@@ -29,6 +29,11 @@ DB_HOST=db
 DB_PORT=5432
 POSTGRES_DB=stock_db
 ```
+- Run tests
+```
+cd stock_app/
+python manage.py tests
+```
 - Run docker-compose
 ```
 sudo docker-compose up --build
