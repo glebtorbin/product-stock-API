@@ -1,7 +1,8 @@
+from django.urls import include, path
 from rest_framework import routers
-from django.contrib import admin
-from django.urls import path, include
-from .views import StockViewSet, StockAvailSign, ProductViewSet, StockBalance, ReserveProduct, DeleteReserve
+
+from .views import (DeleteReserve, ProductViewSet, ReserveProduct,
+                    StockAvailSign, StockBalance, StockViewSet)
 
 router = routers.DefaultRouter()
 router.register(r'stocks', StockViewSet)

@@ -1,15 +1,16 @@
-from rest_framework.views import APIView
+from rest_framework import viewsets
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from rest_framework.response import Response
-from django.shortcuts import render
-from rest_framework import viewsets, status
-from rest_framework.mixins import CreateModelMixin, ListModelMixin, DestroyModelMixin
+from rest_framework.views import APIView
 
-from goods.models import Stock, Product, Reserve, ProductQuantity, StockProductReserve
-from .serializers import StockSerializer, ProductSerializer, ReserveSerializer
+from goods.models import (Product, ProductQuantity, Reserve, Stock,
+                          StockProductReserve)
+
+from .serializers import ProductSerializer, StockSerializer
 
 
 class StockViewSet(CreateModelMixin, ListModelMixin,
-                    viewsets.GenericViewSet):
+                   viewsets.GenericViewSet):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
@@ -20,16 +21,17 @@ class StockAvailSign(APIView):
         stock = Stock.objects.get(id=id)
         return Response({"status": stock.avail_sign})
 
-
     def post(self, request, id):
         stock = Stock.objects.get(id=id)
-        if stock.avail_sign == False:
+        if not stock.avail_sign:
             stock.avail_sign = True
             stock.save()
         else:
             stock.avail_sign = False
             stock.save()
-        return Response({f"{stock.title} availability status": stock.avail_sign})
+        return Response(
+            {f"{stock.title} availability status": stock.avail_sign}
+        )
 
 
 class StockBalance(APIView):
@@ -44,7 +46,7 @@ class StockBalance(APIView):
                 'code': pr.product.code,
                 'quantity': pr.quantity
             }
-            total+=pr.quantity
+            total += pr.quantity
         prod['total'] = total
         if total == 0:
             return Response({stock.title: 'Stock is empty'})
@@ -57,7 +59,7 @@ class ReserveProduct(APIView):
 
     def post(self, request, id):
         stock = Stock.objects.get(id=id)
-        if stock.avail_sign == False:
+        if not stock.avail_sign:
             return Response(f'Stock {stock.id} is not available')
         products = request.data['reserve']
         reserve = Reserve.objects.create(
@@ -109,16 +111,14 @@ class DeleteReserve(APIView):
                 product=pos.product,
                 stock=pos.stock
             )
-            qua.quantity+=1
+            qua.quantity += 1
             qua.save()
         reserved_pos.delete()
         reserve.delete()
         return Response('OK')
 
 
-
 class ProductViewSet(CreateModelMixin, ListModelMixin,
-                    viewsets.GenericViewSet):
+                     viewsets.GenericViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-

@@ -1,28 +1,30 @@
-import json
-from django.forms.models import model_to_dict
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from rest_framework.fields import CharField, JSONField, IntegerField
+from rest_framework.fields import IntegerField, JSONField
 
-from goods.models import Stock, Product, Product_attr, Reserve, ProductQuantity
+from goods.models import Product, Product_attr, ProductQuantity, Reserve, Stock
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    stocks = serializers.PrimaryKeyRelatedField(queryset=Stock.objects.all(), many=True)
+    stocks = serializers.PrimaryKeyRelatedField(
+        queryset=Stock.objects.all(), many=True
+    )
     data = JSONField(write_only=True)
     quantity = IntegerField(write_only=True)
 
     class Meta:
-        fields = ('id', 'title', 'data', 'code', 'quantity', 'date_create', 'stocks')
+        fields = (
+            'id', 'title', 'data', 'code',
+            'quantity', 'date_create', 'stocks'
+        )
         model = Product
-    
+
     def create(self, data):
         if Product.objects.filter(code=data['code']).exists():
             product = Product.objects.get(code=data['code'])
         else:
             product = Product.objects.create(
-                title = data['title'],
-                code = data['code'],
+                title=data['title'],
+                code=data['code'],
             )
         for d in data['stocks']:
             product.stocks.add(d.id)
@@ -30,9 +32,9 @@ class ProductSerializer(serializers.ModelSerializer):
         v_data = data["data"]
         for i in v_data:
             Product_attr.objects.create(
-                name = i,
-                value = v_data[i],
-                prod_id = product
+                name=i,
+                value=v_data[i],
+                prod_id=product
             ).save()
         for stock in data['stocks']:
             qua = ProductQuantity.objects.filter(
@@ -70,16 +72,10 @@ class ReserveSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('reserve', )
         model = Reserve
-    
-    # def create(self, data):
-    #     stock_id = self.context.get('r_id')
-    #     products = data['reserve']
-    #     print(stock_id, products)
-    #     return data
 
 
 class StockSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('id', 'title','avail_sign', 'date_create')
+        fields = ('id', 'title', 'avail_sign', 'date_create')
         model = Stock
