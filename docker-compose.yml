@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: db
+    image: postgres:13.0-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+
+  web:
+    container_name: app
+    build: .
+    # image: glebb0/pay_api_back:latest
+    restart: always
+    command: >
+      bash -c "python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn --bind 0:8021 stock_app.wsgi:application"      
+    volumes:
+      - static_dir:/app/static/
+      - media_dir:/app/media/
+    ports:
+     - "8021:8021"
+    depends_on:
+      - db
+    env_file:
+      - ./.env 
+
+volumes:
+  postgres_data:
+  static_dir:
+  media_dir:
