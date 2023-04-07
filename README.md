@@ -36,7 +36,8 @@ python manage.py tests
 ```
 - Run docker-compose
 ```
-sudo docker-compose up --build
+cd ..
+docker-compose up --build
 ```
 
 # Описание методов
