@@ -38,3 +38,47 @@ python manage.py tests
 ```
 sudo docker-compose up --build
 ```
+
+# Описание методов
+
+- Документация доступна после запуска проекта тут:
+```
+http://127.0.0.1:8021/redoc/
+```
+
+- Создание склада:
+
+POST http://127.0.0.1:8021/api/stocks/
+```
+{
+    "title": "string"
+}
+```
+
+```
+[
+  {
+    "id": 0,
+    "title": "string",
+    "avail_sign": true,
+    "date_create": "2019-08-24T14:15:22Z"
+  }
+]
+```
+
+- Список складов:
+
+GET http://127.0.0.1:8021/api/stocks/
+
+```
+[
+  {
+    "id": 0,
+    "title": "string",
+    "avail_sign": true,
+    "date_create": "2019-08-24T14:15:22Z"
+  }
+]
+```
+
+

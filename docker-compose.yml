@@ -13,7 +13,6 @@ services:
   web:
     container_name: app
     build: .
-    # image: glebb0/pay_api_back:latest
     restart: always
     command: >
       bash -c "python manage.py migrate &&
