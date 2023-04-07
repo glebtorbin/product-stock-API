@@ -1,13 +1,16 @@
+import json
+from django.forms.models import model_to_dict
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-from rest_framework.fields import CharField, JSONField
+from rest_framework.fields import CharField, JSONField, IntegerField
 
-from goods.models import Stock, Product, Product_attr, Reserve
+from goods.models import Stock, Product, Product_attr, Reserve, ProductQuantity
 
 
 class ProductSerializer(serializers.ModelSerializer):
     stocks = serializers.PrimaryKeyRelatedField(queryset=Stock.objects.all(), many=True)
     data = JSONField(write_only=True)
+    quantity = IntegerField(write_only=True)
 
     class Meta:
         fields = ('id', 'title', 'data', 'code', 'quantity', 'date_create', 'stocks')
@@ -16,15 +19,14 @@ class ProductSerializer(serializers.ModelSerializer):
     def create(self, data):
         if Product.objects.filter(code=data['code']).exists():
             product = Product.objects.get(code=data['code'])
-            product.quantity = int(product.quantity) + int(data['quantity'])
         else:
             product = Product.objects.create(
                 title = data['title'],
                 code = data['code'],
-                quantity = data['quantity'],
             )
-        product.stocks.set(data['stocks'])
-        product.save()
+        for d in data['stocks']:
+            product.stocks.add(d.id)
+            product.save()
         v_data = data["data"]
         for i in v_data:
             Product_attr.objects.create(
@@ -32,6 +34,24 @@ class ProductSerializer(serializers.ModelSerializer):
                 value = v_data[i],
                 prod_id = product
             ).save()
+        for stock in data['stocks']:
+            qua = ProductQuantity.objects.filter(
+                product=product,
+                stock=Stock.objects.get(id=stock.id)
+            )
+            if qua.exists():
+                q = ProductQuantity.objects.get(
+                    product=product,
+                    stock=Stock.objects.get(id=stock.id)
+                )
+                q.quantity = q.quantity + data['quantity']
+                q.save()
+            else:
+                ProductQuantity.objects.create(
+                    product=product,
+                    stock=Stock.objects.get(id=stock.id),
+                    quantity=data['quantity']
+                ).save()
         return data
 
     def to_representation(self, instance):
@@ -59,8 +79,7 @@ class ReserveSerializer(serializers.ModelSerializer):
 
 
 class StockSerializer(serializers.ModelSerializer):
-    products = ProductSerializer(read_only=True, many=True)
 
     class Meta:
-        fields = ('id', 'title','avail_sign', 'date_create', 'products')
+        fields = ('id', 'title','avail_sign', 'date_create')
         model = Stock

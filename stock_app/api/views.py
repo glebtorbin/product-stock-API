@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, DestroyModelMixin
 
-from goods.models import Stock, Product, Reserve
+from goods.models import Stock, Product, Reserve, ProductQuantity, StockProductReserve
 from .serializers import StockSerializer, ProductSerializer, ReserveSerializer
 
 
@@ -37,11 +37,11 @@ class StockBalance(APIView):
     def get(self, request, id):
         prod = {}
         stock = Stock.objects.get(id=id)
-        products = stock.products.all()
+        qua = stock.quantity.all()
         total = 0
-        for pr in products:
-            prod[pr.title] = {
-                'code': pr.code,
+        for pr in qua:
+            prod[pr.product.title] = {
+                'code': pr.product.code,
                 'quantity': pr.quantity
             }
             total+=pr.quantity
@@ -57,18 +57,64 @@ class ReserveProduct(APIView):
 
     def post(self, request, id):
         stock = Stock.objects.get(id=id)
+        if stock.avail_sign == False:
+            return Response(f'Stock {stock.id} is not available')
         products = request.data['reserve']
+        reserve = Reserve.objects.create(
+            count_positions=0
+        )
+        reserve.save()
+        reserved = []
+        unknown_prod = []
+        not_in_stock = []
         for pr in products:
             if Product.objects.filter(code=pr).exists():
                 pr_id = Product.objects.get(code=pr).id
                 if stock.products.filter(id=pr_id).exists():
-                    print('ok')
+                    pos = ProductQuantity.objects.get(
+                        product=Product.objects.get(code=pr),
+                        stock=stock
+                    )
+                    pos.quantity = pos.quantity - 1
+                    pos.save()
+                    StockProductReserve.objects.create(
+                        reserve=reserve,
+                        product=Product.objects.get(code=pr),
+                        stock=stock
+                    ).save()
+                    reserved.append(pr)
                 else:
-                    print('no')
+                    not_in_stock.append(pr)
             else:
-                print('no prod')
-        print(request.data)
-        return Response(request.data)
+                unknown_prod.append(pr)
+        reserve.count_positions = len(reserved)
+        reserve.save()
+        return Response({
+            'reserve': reserve.id,
+            'reserved_positions': reserved,
+            'not_available': not_in_stock,
+            'unknown_items': unknown_prod
+        })
+
+
+class DeleteReserve(APIView):
+
+    def delete(self, request, id):
+        reserve = Reserve.objects.get(id=id)
+        reserved_pos = StockProductReserve.objects.filter(
+            reserve=reserve
+        )
+        for pos in reserved_pos:
+            qua = ProductQuantity.objects.get(
+                product=pos.product,
+                stock=pos.stock
+            )
+            qua.quantity+=1
+            qua.save()
+        reserved_pos.delete()
+        reserve.delete()
+        return Response('OK')
+
 
 
 class ProductViewSet(CreateModelMixin, ListModelMixin,

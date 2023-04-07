@@ -13,12 +13,23 @@ class Stock(models.Model):
 class Product(models.Model):
     title = models.CharField(max_length=500)
     code = models.BigIntegerField()
-    quantity = models.IntegerField(default=0)
     date_create = models.DateTimeField(auto_now_add=True)
     stocks = models.ManyToManyField(Stock, related_name='products')
 
     def __str__(self):
         return self.title
+
+
+class ProductQuantity(models.Model):
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE,
+        blank=False, null=False, related_name='quantity'
+    )
+    stock = models.ForeignKey(
+        Stock, on_delete=models.CASCADE,
+        blank=False, null=False, related_name='quantity'
+    )
+    quantity = models.IntegerField(default=0)
 
 
 class Product_attr(models.Model):
